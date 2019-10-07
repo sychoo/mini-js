@@ -37,32 +37,28 @@ class Block(Node):
 class Statement(Node):
     def __init__(self, expr):
         self.expr = expr
-
-    def compile(self, ctx):
-        self.expr.compile(ctx)
-        ctx.emit(POP_TOP)
-
     def interpret(self, ctx):
         self.expr.interpret(ctx)
 
 
+# primitive
 class Number(Node):
     def __init__(self, value):
         self.value = value
-
-    def compile(self, ctx):
-        ctx.emit(LOAD_CONST, ctx.new_const(JSNumber(self.value)))
-
+    def add(self, numberObj):
+      return Number(self.value + numberObj.value)
+    def getValue(self):
+      return self.value
     def interpret(self, ctx):
-        return self.value
+        return self
 
 
+#primitive
 class String(Node):
     def __init__(self, value):
         self.value = value
-
     def interpret(self, ctx):
-        return self.value
+        return self
 
 
 class BinOp(Node):
@@ -70,18 +66,9 @@ class BinOp(Node):
         self.op = op
         self.left = left
         self.right = right
-
-    def compile(self, ctx):
-        self.left.compile(ctx)
-        self.right.compile(ctx)
-        opname = {
-            "+": "BINARY_ADD",
-        }
-        ctx.emit(opname[self.op])
-
     def interpret(self, ctx):
         if self.op == "+":
-            return self.left.interpret(ctx) + self.right.interpret(ctx)
+            return self.left.interpret(ctx).add(self.right.interpret(ctx))
         else:
             return NotImplemented
 
@@ -111,8 +98,9 @@ class PrintStatement(Node):
         self.cmd = cmd
 
     def interpret(self, ctx):
+
         # print string
-        if self.expr.type() == String:
+        if self.expr.interpret(ctx).type() == String:
             # strip the quotes around the string
             sys.stdout.write(self.expr.value[1:-1])
 
@@ -123,9 +111,11 @@ class PrintStatement(Node):
             # flush stdout
             sys.stdout.flush()
 
-        if (self.expr.type() == Number):
+        # print number
+        if (self.expr.interpret(ctx).type() == Number):
+            
             # write the numeric value
-            sys.stdout.write(self.expr.value)
+            sys.stdout.write(str(self.expr.interpret(ctx).value))
 
             # handle println, append "\n" at the end
             if self.cmd == "println":
@@ -133,3 +123,6 @@ class PrintStatement(Node):
 
             # flush stdout
             sys.stdout.flush()
+
+        else:
+          return NotImplemented

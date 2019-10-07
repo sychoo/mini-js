@@ -1,12 +1,12 @@
 mini JS
 =======
 
-- World's simplest Interpreter
+- World's Simplest Interpreter.
 
-- Link to the Original YouTube Video by Alex Gaynor
-https://youtu.be/LCslqgM48D4
+- Link to the Original [YouTube Video](https://youtu.be/LCslqgM48D4) by Alex Gaynor About Writing an Interpreter.
 
-- Six Steps of Programming Language Interpretation
+
+- Six Steps of Programming Language Interpretation:
 	- Lexer
 	- Parser
 	- AST

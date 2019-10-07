@@ -42,6 +42,7 @@ def main():
   # interpret the block
   print("\n>>> Executing >>>")
   ast.interpret({})
-  print("<<< Terminated <<<")
+  print("<<< Terminated <<<\n")
+
 if __name__ == "__main__":
   main()
