@@ -15,7 +15,7 @@ https://youtu.be/LCslqgM48D4
   - Runtime
 
 - Sample Program
- - ```
+    ```
       a = 3;
       if (a >= 2) {
 	      print "a is big!";
@@ -23,4 +23,3 @@ https://youtu.be/LCslqgM48D4
 	      print a;
       }
     ```
-    
