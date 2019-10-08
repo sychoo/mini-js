@@ -33,15 +33,17 @@ def main():
   lexer = Lexer()
   tokenStream = lexer.lex(getRawProgramString(sys.argv[1]))
 
+  # lexer debug clause
   #while(True):
   #  print(tokenStream.next())
-  # create parser
+
+  #create parser
   parser = Parser()
-  ast = parser.parse(tokenStream)
+  parsedAST = parser.parse(tokenStream)
 
   # interpret the block
   print("\n>>> Executing >>>")
-  ast.interpret({})
+  parsedAST.interpret(ast.Context().getEmptyContext())
   print("<<< Terminated <<<\n")
 
 if __name__ == "__main__":
