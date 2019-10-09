@@ -1,0 +1,5 @@
+// hello
+3;
+if (false) {
+  println "Hello";
+};

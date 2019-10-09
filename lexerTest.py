@@ -1,17 +1,5 @@
 # Simon Chu
-# 2019-10-06 21:38:06 Sun EDT
-# Interpreter program to run program
-# https://www.youtube.com/watch?v=LCslqgM48D4
-
-''' This interpreter interprets the following language (A subset of javascript)
-a = 3;
-if (a >= 2) {
-	print "a is big!";
-}
-else {
-	print a;
-}
-'''
+# 2019-10-08 15:03:07 EDT Tuesday
 
 from lexer import Lexer
 from parser import Parser
@@ -28,19 +16,14 @@ def main():
   if len(sys.argv) != 2:
     print("usage: python interp.py <program to execute>")
     exit()
-  
+
   # create lexer
   lexer = Lexer()
   tokenStream = lexer.lex(getRawProgramString(sys.argv[1]))
 
-  # create parser
-  parser = Parser()
-  parsedAST = parser.parse(tokenStream)
-
-  # interpret the block
-  print("\n>>> Executing >>>")
-  parsedAST.interpret(ast.Context().getEmptyContext())
-  print("<<< Terminated <<<\n")
+  # lexer debug clause
+  for token in tokenStream:
+    print(token)
 
 if __name__ == "__main__":
   main()

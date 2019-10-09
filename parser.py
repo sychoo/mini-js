@@ -11,7 +11,8 @@ class Parser:
         # define the parser
         pg = ParserGenerator(
             ["NUMBER", "PLUS", "MINUS", "MULTIPLY", "DIVIDE", "SEMICOLON",
-             "PRINT", "PRINTLN", "STRING", "EQUAL", "IDENTIFIER"
+             "PRINT", "PRINTLN", "STRING", "EQUAL", "IDENTIFIER", "BOOLEAN",
+             "LBRACE", "RBRACE", "LPAREN", "RPAREN", "IF", "ELSE"
              ],
             # A list of precedence rules with ascending precedence, to
             # disambiguate ambiguous production rules.
@@ -73,6 +74,35 @@ class Parser:
         def expr_id(s):
             return ast.Expr(ast.Identifier(s[0].getstr()))
 
+        # single if expression, body of if expression can be either statements or expression
+        # if expression is evaluated to Null if the body are statements
+        # body must be consistent, which means all the clause has to be either expressions or statements
+        # don't forget semicolor at the end of the if block
+        @pg.production("expr : IF LPAREN expr RPAREN LBRACE expr RBRACE ")
+        @pg.production("expr : IF LPAREN expr RPAREN LBRACE statements RBRACE")
+        def expr_if(s):
+            return ast.IfStatement(s[2], s[5])
+
+        # if - else if - else expression. Else - if is optional
+        @pg.production("expr : IF LPAREN expr RPAREN LBRACE expr RBRACE else-if-body")
+        @pg.production("expr : IF LPAREN expr RPAREN LBRACE statements RBRACE else-if-body")
+        def expr_if_else(s):
+          return None
+
+        # define the else if body in the case of multiple (one or more) else - if expressions
+        @pg.production("else-if-body : ELSE IF LPAREN expr RPAREN LBRACE expr RBRACE else-if-body")
+        @pg.production("else-if-body : ELSE IF LPAREN expr RPAREN LBRACE statements RBRACE else-body")
+        def expr_else_if_body(s):
+          return None
+
+        @pg.production("else-if-body : else-body")
+        def expr_else_if_body_else(s):
+          return None
+        
+        @pg.production("else-body : ELSE LBRACE expr RBRACE")
+        def expr_else_body(s):
+          return None
+
         # number value
         @pg.production("val : NUMBER")
         def val_number(s):
@@ -83,8 +113,14 @@ class Parser:
         def val_string(s):
             return ast.String(s[0].getstr())
 
+        # boolean value
+        @pg.production("val : BOOLEAN")
+        def val_boolean(s):
+            return ast.Boolean(s[0].getstr())
+
         # build the parser
         self.parser = pg.build()
 
+    # return the parsedAST
     def parse(self, tokenStream):
         return self.parser.parse(tokenStream)
