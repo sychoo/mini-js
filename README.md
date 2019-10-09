@@ -25,9 +25,10 @@ mini JS
     ```
 
 - To-Do
+  - support comparison operators, support test/p2
   - if else; if; if-else if-else; expressions
-  - support comments
   - support LLVM backend
+  - support multi line comments in a more elegant way(currently partially working)
   - add boolean operations
   - allow if - else if - else block to have no statements or expressions in it
   - while statement (Note that it must be a statement because it doesn't make sure to be an expression)

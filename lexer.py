@@ -12,14 +12,17 @@ class Lexer:
         #lg.ignore(r"\s+") # original
         #lg.ignore(r"[^\S\n\r\f]+") # this is the regex that just matches a space (emtpy string)
         #lg.ignore(r"[^\S\n]+") # matches just a space
-        lg.ignore(r"(\s+)|(\/\/.*\n)")
+
+        # support get rid of white space, single-line comments and multiline comments
+        # since some of the characters are defined in the lexer, I have to ignore them in order to achieve multi-line comments
+        lg.ignore(r"(\s+)|(\/\/.*\n)|(\/\*(.*)|(\s*)\*\/)")
         lg.add("NEWLINE", r"\n")
         #lg.add("SLASH", r"\/")
         lg.add("IF", r"if")
         lg.add("ELSE", r"else")
         lg.add("PRINTLN", r"println")
         lg.add("PRINT", r"print")
-        lg.add("WHITESPACE", r"\s")
+        lg.add("WHITESPACE", r"\s") # this is solely for debug purpose. white space will not be allowed in the actual interpretation of the program
         lg.add("LPAREN", r"\(")
         lg.add("RPAREN", r"\)")
         lg.add("LBRACE", r"\{")

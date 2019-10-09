@@ -18,29 +18,32 @@ from parser import Parser
 import ast
 import sys
 
+
 def getRawProgramString(filename):
-  lines = open(filename, "r").readlines()
-  rawString = "".join(lines)
-  return rawString
+    lines = open(filename, "r").readlines()
+    rawString = "".join(lines)
+    return rawString
+
 
 def main():
-  # check command line argument and print usage message
-  if len(sys.argv) != 2:
-    print("usage: python interp.py <program to execute>")
-    exit()
-  
-  # create lexer
-  lexer = Lexer()
-  tokenStream = lexer.lex(getRawProgramString(sys.argv[1]))
+    # check command line argument and print usage message
+    if len(sys.argv) != 2:
+        print("usage: python interp.py <program to execute>")
+        exit()
 
-  # create parser
-  parser = Parser()
-  parsedAST = parser.parse(tokenStream)
+    # create lexer
+    lexer = Lexer()
+    tokenStream = lexer.lex(getRawProgramString(sys.argv[1]))
 
-  # interpret the block
-  print("\n>>> Executing >>>")
-  parsedAST.interpret(ast.Context().getEmptyContext())
-  print("<<< Terminated <<<\n")
+    # create parser
+    parser = Parser()
+    parsedAST = parser.parse(tokenStream)
+
+    # interpret the block
+    print("\n>>> Executing >>>")
+    parsedAST.interpret(ast.Context().getEmptyContext())
+    print("<<< Terminated <<<\n")
+
 
 if __name__ == "__main__":
-  main()
+    main()

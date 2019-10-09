@@ -75,14 +75,14 @@ class Node(object):
 
 class Null(Node):
     def __init__(self):
-      pass
-    
+        pass
+
     def getString(self):
-      return "null"
+        return "null"
 
     def getValue(self):
-      return None
-    
+        return None
+
     def interpret(self, ctx):
         return NullPointerException("Null Cannot Be Interpreted!")
 
@@ -160,10 +160,10 @@ class Boolean(Node):
             return TypeError("Boolean value must be either true or false!")
 
     def isTrue(self):
-      return self.value == True
-    
+        return self.value == True
+
     def isFalse(self):
-      return self.value == False
+        return self.value == False
 
     def interpret(self, ctx):
         return self
@@ -353,13 +353,15 @@ class ElseIfBodyList(Node):
         return else_body.interpret(ctx)
 
 # define else if body
+
+
 class ElseIfBody(Node):
     def __init__(self, condition, else_if_body):
         self.condition = condition
         self.else_if_body = else_if_body
 
     def getValue(self):
-      return self.else_if_body
+        return self.else_if_body
 
     def interpretCondition(self, ctx):
         return self.condition.interpret(ctx)
@@ -375,13 +377,15 @@ class ElseIfBody(Node):
             return Null()
 
 # define else body
+
+
 class ElseBody(Node):
     def __init__(self, else_body):
         # note that else doesn't have conditional expression
         self.else_body = else_body
 
     def getValue(self):
-      return self.else_body
+        return self.else_body
 
     def interpret(self, ctx):
         # case when if body consists of expressions
