@@ -16,7 +16,7 @@ class Lexer:
         # support get rid of white space, single-line comments and multiline comments
         # since some of the characters are defined in the lexer, I have to ignore them in order to achieve multi-line comments
         lg.ignore(r"(\s+)|(\/\/.*\n)|(\/\*(.*)|(\s*)\*\/)")
-        lg.add("NEWLINE", r"\n")
+        lg.add("NEWLINE", r"\n") # no longer needed. Newline character is not allowed in mini-js
         #lg.add("SLASH", r"\/")
         lg.add("IF", r"if")
         lg.add("ELSE", r"else")
