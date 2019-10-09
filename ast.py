@@ -1,9 +1,14 @@
 # define the AST (abstract syntax tree) that the parser will parse to
 # all other ASTs inherits from Node
 # interpret() function must return the interpreted elements
+
+# main difference between expression and statements: interpret() function for
+# expressions returns, interpret() function for statement do not have to return.
 import sys
 
 # assignment error
+
+
 class AssignmentError(Exception):
     pass
 
@@ -14,15 +19,15 @@ class ContextError(Exception):
 
 
 class NullPointerException(Exception):
-  pass
+    pass
 
 
 class ConditionError(Exception):
-  pass
+    pass
 
 
 class TypeError(Exception):
-  pass
+    pass
 
 
 class Context(object):
@@ -66,14 +71,24 @@ class Node(object):
         return type(self)
 
 # define Null type
-class Null(Node):
-  def __init__(self):
-    pass
 
-  def interpret(self, ctx):
-    return NullPointerException("Null Cannot Be Interpreted!")
+
+class Null(Node):
+    def __init__(self):
+      pass
+    
+    def getString(self):
+      return "null"
+
+    def getValue(self):
+      return None
+    
+    def interpret(self, ctx):
+        return NullPointerException("Null Cannot Be Interpreted!")
 
 # expression
+
+
 class Expr(Node):
     def __init__(self, value):
         self.value = value
@@ -129,20 +144,26 @@ class Boolean(Node):
     def __init__(self, value):
         # the value of Boolean will just be python boolean
         if (value == "true"):
-          self.value = True
+            self.value = True
         if (value == "false"):
-          self.value = False
+            self.value = False
 
     def getValue(self):
         return self.value
 
     def getString(self):
-        if (self.value == True):
-          return "true"
-        elif (self.value == False):
-          return "false"
+        if (self.isTrue()):
+            return "true"
+        elif (self.isFalse()):
+            return "false"
         else:
-          return TypeError("Boolean value must be either true or false!")
+            return TypeError("Boolean value must be either true or false!")
+
+    def isTrue(self):
+      return self.value == True
+    
+    def isFalse(self):
+      return self.value == False
 
     def interpret(self, ctx):
         return self
@@ -234,12 +255,12 @@ class AssignmentExpression(Node):
         ctx.add(self.identifier, self.expr)
 
 
-class IfStatement(Node):
+class IfExpression(Node):
     def __init__(self, condition, if_body):
         # condition is an expression that can be evaluated to Boolean
         self.condition = condition
 
-        # statements 
+        # statements
         self.if_body = if_body
 
     def interpret(self, ctx):
@@ -248,26 +269,129 @@ class IfStatement(Node):
 
         # type check conditional statement (must be Boolean)
         if (self.condition.type() != Boolean):
-          raise ConditionError("Conditional statement of if statement must be type Boolean.")
+            raise ConditionError(
+                "Conditional statement of if statement must be type Boolean.")
 
         # case when condition is true, execute if block
         if (self.condition.getValue() == True):
 
-          # case when if body consists of expressions
-          if (self.if_body.type == Expr):
-            return self.if_body.interpret(ctx)
+            # case when if body consists of expressions
+            if (self.if_body.type == Expr):
+                return self.if_body.interpret(ctx)
 
-          # case when if body consists of statements
-          if (self.if_body.type() == Block):
-            self.if_body.interpret(ctx)
-            return Null
+            # case when if body consists of statements
+            if (self.if_body.type() == Block):
+                self.if_body.interpret(ctx)
+                return Null()
+
+        # case when conditional expression is false, return Null
+        if (self.condition.getValue() == False):
+            return Null()
 
 
-class IfElseStatement(Node):
-    def __init__(self, condition, ifBlockStatements, elseBlockStatements):
+class IfElseIfElseExpression(Node):
+    def __init__(self, condition, if_body, else_if_body_list, else_body):
         self.condition = condition
-        self.ifBlockStatements = ifBlockStatements
-        self.elseBlockStatements = elseBlockStatements
+        self.if_body = if_body
+        self.else_if_body_list = else_if_body_list
+        self.else_body = else_body
+
+    def interpret(self, ctx):
+        # interpret condition and if_body
+        self.condition = self.condition.interpret(ctx)
+
+        # type check conditional statement (must be Boolean)
+        if (self.condition.type() != Boolean):
+            raise ConditionError(
+                "Conditional statement of if statement must be type Boolean.")
+
+        # case when condition is true, execute if block
+        if (self.condition.getValue() == True):
+
+            # case when if body consists of expressions
+            if (self.if_body.type() == Expr):
+                return self.if_body.interpret(ctx)
+
+            # case when if body consists of statements
+            if (self.if_body.type() == Block):
+                self.if_body.interpret(ctx)
+                return Null()
+
+        # case when the conditional expression is false, iteratively check expression
+        # body list
+        if (self.condition.getValue() == False):
+            return self.else_if_body_list.interpret(ctx, self.else_body)
+
+
+# define a list of else-if body
+class ElseIfBodyList(Node):
+    def __init__(self, else_if_body_list):
+        self.else_if_body_list = else_if_body_list
+
+    def getASTList(self):
+        return self.else_if_body_list
+
+    def interpret(self, ctx, else_body):
+        for else_if_body in self.else_if_body_list:
+            # case when case_if_body is evaluated to True
+            # evaluate conditional expression first
+            if (else_if_body.interpretCondition(ctx).isTrue()):
+                # case when else if body consists of expressions
+                if (else_if_body.getValue().type() == Expr):
+                    return else_if_body.interpretBody(ctx)
+
+                # case when else if body consists of statements
+                if (else_if_body.getValue().type() == Block):
+                    else_if_body.interpretBody(ctx)
+                    return Null()
+
+            # case when the else_if_body is evaluated to False
+            if (else_if_body.interpretCondition(ctx).isFalse()):
+                continue
+
+        # case when all previous condition expressions are false, execute else_if body
+        return else_body.interpret(ctx)
+
+# define else if body
+class ElseIfBody(Node):
+    def __init__(self, condition, else_if_body):
+        self.condition = condition
+        self.else_if_body = else_if_body
+
+    def getValue(self):
+      return self.else_if_body
+
+    def interpretCondition(self, ctx):
+        return self.condition.interpret(ctx)
+
+    def interpretBody(self, ctx):
+                # case when if body consists of expressions
+        if (self.else_if_body.type() == Expr):
+            return self.else_if_body.interpret(ctx)
+
+        # case when if body consists of statements
+        if (self.else_if_body.type() == Block):
+            self.else_if_body.interpret(ctx)
+            return Null()
+
+# define else body
+class ElseBody(Node):
+    def __init__(self, else_body):
+        # note that else doesn't have conditional expression
+        self.else_body = else_body
+
+    def getValue(self):
+      return self.else_body
+
+    def interpret(self, ctx):
+        # case when if body consists of expressions
+        if (self.else_body.type() == Expr):
+            return self.else_body.interpret(ctx)
+
+        # case when if body consists of statements
+        if (self.else_body.type() == Block):
+            self.else_body.interpret(ctx)
+            return Null()
 
 
 class PrintStatement(Node):
@@ -276,11 +400,11 @@ class PrintStatement(Node):
         self.cmd = cmd
 
     def interpret(self, ctx):
-        # type check
+        # evaluate expression
         self.expr = self.expr.interpret(ctx)
 
         # check whether the expressions are Number and String primitives
-        if (self.expr.type() == Number or self.expr.type() == String):
+        if (self.expr.type() == Number or self.expr.type() == String or self.expr.type() == Null or self.expr.type() == Boolean):
             sys.stdout.write(self.expr.getString())
 
             # handle println, append "\n" at the end

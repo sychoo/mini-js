@@ -1,0 +1,9 @@
+if (false) {
+  //println "statement is true";
+  5
+} else if (true) {
+  6
+  //println "else if statement is true";
+} else {
+  println "haha this the else statement";
+};

@@ -81,27 +81,42 @@ class Parser:
         @pg.production("expr : IF LPAREN expr RPAREN LBRACE expr RBRACE ")
         @pg.production("expr : IF LPAREN expr RPAREN LBRACE statements RBRACE")
         def expr_if(s):
-            return ast.IfStatement(s[2], s[5])
+            return ast.IfExpression(s[2], s[5])
 
         # if - else if - else expression. Else - if is optional
-        @pg.production("expr : IF LPAREN expr RPAREN LBRACE expr RBRACE else-if-body")
-        @pg.production("expr : IF LPAREN expr RPAREN LBRACE statements RBRACE else-if-body")
+        @pg.production("expr : IF LPAREN expr RPAREN LBRACE expr RBRACE else-if-body-list else-body")
+        @pg.production("expr : IF LPAREN expr RPAREN LBRACE statements RBRACE else-if-body-list else-body")
+        def expr_if_elseif_else(s):
+          return ast.IfElseIfElseExpression(s[2], s[5], s[7], s[8])
+
+        # if - else expression. DO NOT INCLUDE else if body lists (put placeholder empty else if body list)
+        @pg.production("expr : IF LPAREN expr RPAREN LBRACE expr RBRACE else-body")
+        @pg.production("expr : IF LPAREN expr RPAREN LBRACE statements RBRACE else-body")
         def expr_if_else(s):
-          return None
+          return ast.IfElseIfElseExpression(s[2], s[5], ast.ElseIfBodyList([]), s[7])
+
 
         # define the else if body in the case of multiple (one or more) else - if expressions
-        @pg.production("else-if-body : ELSE IF LPAREN expr RPAREN LBRACE expr RBRACE else-if-body")
-        @pg.production("else-if-body : ELSE IF LPAREN expr RPAREN LBRACE statements RBRACE else-body")
-        def expr_else_if_body(s):
-          return None
+        @pg.production("else-if-body-list : else-if-body-list else-if-body")
+        @pg.production("else-if-body-list : else-if-body-list else-if-body")
+        def expr_else_if_body_list(s):
+          return ast.ElseIfBodyList(s[0].getASTList() + [s[1]])
 
-        @pg.production("else-if-body : else-body")
-        def expr_else_if_body_else(s):
-          return None
-        
+        # define a single else-if-body as a else-if-body-list
+        @pg.production("else-if-body-list : else-if-body")
+        def expr_else_if_body_list__else_if_body(s):
+          return ast.ElseIfBodyList([s[0]])
+
+        @pg.production("else-if-body : ELSE IF LPAREN expr RPAREN LBRACE expr RBRACE")
+        @pg.production("else-if-body : ELSE IF LPAREN expr RPAREN LBRACE statements RBRACE")
+        def expr_else_if_body(s):
+          return ast.ElseIfBody(s[3], s[6])
+
+        # define the else body
         @pg.production("else-body : ELSE LBRACE expr RBRACE")
+        @pg.production("else-body : ELSE LBRACE statements RBRACE")
         def expr_else_body(s):
-          return None
+          return ast.ElseBody(s[2])
 
         # number value
         @pg.production("val : NUMBER")
