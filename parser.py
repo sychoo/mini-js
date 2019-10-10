@@ -12,7 +12,8 @@ class Parser:
         pg = ParserGenerator(
             ["NUMBER", "PLUS", "MINUS", "MULTIPLY", "DIVIDE", "SEMICOLON",
              "PRINT", "PRINTLN", "STRING", "EQUAL", "IDENTIFIER", "BOOLEAN",
-             "LBRACE", "RBRACE", "LPAREN", "RPAREN", "IF", "ELSE"
+             "LBRACE", "RBRACE", "LPAREN", "RPAREN", "IF", "ELSE", "BOOLEAN_AND",
+             "BOOLEAN_OR"
              ],
             # A list of precedence rules with ascending precedence, to
             # disambiguate ambiguous production rules.
@@ -61,6 +62,9 @@ class Parser:
         @pg.production("expr : expr MINUS expr")
         @pg.production("expr : expr MULTIPLY expr")
         @pg.production("expr : expr DIVIDE expr")
+        @pg.production("expr : expr BOOLEAN_OR expr")
+        @pg.production("expr : expr BOOLEAN_AND expr")
+        @pg.production("expr : ")
         def expr_binop(s):
             return ast.BinaryOperator(s[1].getstr(), s[0], s[2])
 

@@ -25,7 +25,7 @@ mini JS
     ```
 
 - To-Do
-  - support comparison operators, support test/p2
+  - support comparison operators between booleans, support test/p2
   - if else; if; if-else if-else; expressions
   - support LLVM backend
   - support multi line comments in a more elegant way(currently partially working)
