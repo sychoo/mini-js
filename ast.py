@@ -133,6 +133,9 @@ class Number(Node):
     def __init__(self, value):
         self.value = value
 
+    def __repr__(self):
+        return "Number: " + self.getString()
+
     def add(self, other):
         return Number(self.getValue() + other.getValue())
 
@@ -235,6 +238,9 @@ class Identifier(Node):
     def __init__(self, name):
         self.name = name
 
+    def __repr__(self):
+        return "Identifier: " + self.getString()
+
     def getValue(self):
         return self.name
 
@@ -294,6 +300,13 @@ class BinaryOperator(Node):
     def getRightType(self):
       return self.right.getValue().type()
 
+    def restoreSelfValues(self, leftIdentifierCache, rightIdentifierCache):
+        if (leftIdentifierCache != None):
+          self.left = leftIdentifierCache
+
+        if (rightIdentifierCache != None):
+          self.right = rightIdentifierCache
+
     def interpret(self, ctx):
         # Over all (Expr, Expr) -> (Expr))
         # Expr is the super type of Numbers, Strings and Booleans
@@ -306,40 +319,49 @@ class BinaryOperator(Node):
         # temporarily suspended type check as a hack for the parent expression
         # to-do add parentedExpr class to the AST and treat it different than other Exprs
         # in the parser wrap it with Expr class for getValue()
+        leftIdentifierCache = None
+        rightIdentifierCache = None
 
         if (self.left.getValue().type() == Identifier):
             # look up the value of the identifier, assign to the left hand side
             # wrap it with expression class so that getValue works for the expression
+            leftIdentifierCache = self.left
             self.left = Expr(ctx.lookup(self.left.interpret(ctx)))
 
-        
+        if (self.right.getValue().type() == Identifier):
+            # look up the value of the identifier, assign to the left hand side
+            # wrap it with expression class so that getValue works for the expression
+            rightIdentifierCache = self.right
+            self.right = Expr(ctx.lookup(self.right.interpret(ctx)))
+
+        result = None 
         if (self.getLeftType() == self.getRightType() == Number or self.getLeftType() == ParentheseValue or self.getRightType() == ParentheseValue):
             # (Number, Number) -> Number
             if self.op == "+":
-                return self.left.interpret(ctx).add(self.right.interpret(ctx))
-            if self.op == "-":
-                return self.left.interpret(ctx).minus(self.right.interpret(ctx))
-            if self.op == "*":
-                return self.left.interpret(ctx).multiply(self.right.interpret(ctx))
-            if self.op == "/":
-                return self.left.interpret(ctx).divide(self.right.interpret(ctx))
+                result = self.left.interpret(ctx).add(self.right.interpret(ctx))
+            elif self.op == "-":
+                result = self.left.interpret(ctx).minus(self.right.interpret(ctx))
+            elif self.op == "*":
+                result = self.left.interpret(ctx).multiply(self.right.interpret(ctx))
+            elif self.op == "/":
+                result = self.left.interpret(ctx).divide(self.right.interpret(ctx))
 
             # (Number, Number) -> Boolean
-            if self.op == ">=":
-                return self.left.interpret(ctx).greater_than_or_equal_to(self.right.interpret(ctx))
-            if self.op == "<=":
-                return self.left.interpret(ctx).less_than_or_equal_to(self.right.interpret(ctx))
-            if self.op == ">":
-                return self.left.interpret(ctx).greater_than(self.right.interpret(ctx))
-            if self.op == "<":
-                return self.left.interpret(ctx).less_than(self.right.interpret(ctx))
+            elif self.op == ">=":
+                result = self.left.interpret(ctx).greater_than_or_equal_to(self.right.interpret(ctx))
+            elif self.op == "<=":
+                result = self.left.interpret(ctx).less_than_or_equal_to(self.right.interpret(ctx))
+            elif self.op == ">":
+                result = self.left.interpret(ctx).greater_than(self.right.interpret(ctx))
+            elif self.op == "<":
+                result = self.left.interpret(ctx).less_than(self.right.interpret(ctx))
 
             # duplicate function (Number/Boolean, Number/Boolean) -> Boolean
             # note that interpreter must make sure the consistency of type between the two sides of the operator
-            if self.op == "==":
-                return self.left.interpret(ctx).equal_to(self.right.interpret(ctx))
-            if self.op == "!=":
-                return self.left.interpret(ctx).not_equal_to(self.right.interpret(ctx))
+            elif self.op == "==":
+                result = self.left.interpret(ctx).equal_to(self.right.interpret(ctx))
+            elif self.op == "!=":
+                result = self.left.interpret(ctx).not_equal_to(self.right.interpret(ctx))
 
             else:
                 raise NotImplementedError("Operator \"" + self.op + "\" is not implemented for Expression Type " +
@@ -348,34 +370,36 @@ class BinaryOperator(Node):
                                           str(self.right.getValue().type()))
 
         # (Boolean, Boolean) -> Number/Boolean
-        if (self.getLeftType() == self.getRightType() == Boolean or self.getLeftType() == ParentheseValue or self.getRightType() == ParentheseValue):
+        elif (self.getLeftType() == self.getRightType() == Boolean or self.getLeftType() == ParentheseValue or self.getRightType() == ParentheseValue):
             # (Boolean, Boolean) -> Boolean
             if self.op == "||":
                 # short circuit evaluation
                 # evaluate left side first
                 self.left = self.left.interpret(ctx)
                 if (self.left.isTrue()):
-                    return Boolean(True)
+                    result = Boolean(True)
                 # otherwise, return the fully evaluated clause
                 # since self.left has already been evaluated, no need to call interpret again
-                return self.left.boolean_or(self.right.interpret(ctx))
+                else:
+                  result = self.left.boolean_or(self.right.interpret(ctx))
 
-            if self.op == "&&":
+            elif self.op == "&&":
                 # supports short circuit evaluation
                 # evalute left side first
                 self.left = self.left.interpret(ctx)
                 if (self.left.isFalse()):
-                    return Boolean(False)
+                    result = Boolean(False)
                 # otherwise, return the fully evaluated clause
                 # since self.left has already been evaluated, no need to call interpret again
-                return self.left.boolean_and(self.right.interpret(ctx))
+                else:
+                  result = self.left.boolean_and(self.right.interpret(ctx))
 
             # duplicate function (Number/Boolean, Number/Boolean) -> Boolean
             # note that interpreter must make sure the consistency of type between the two sides of the operator
-            if self.op == "==":
-                return self.left.interpret(ctx).equal_to(self.right.interpret(ctx))
-            if self.op == "!=":
-                return self.left.interpret(ctx).not_equal_to(self.right.interpret(ctx))
+            elif self.op == "==":
+                result = self.left.interpret(ctx).equal_to(self.right.interpret(ctx))
+            elif self.op == "!=":
+                result = self.left.interpret(ctx).not_equal_to(self.right.interpret(ctx))
 
             else:
                 raise NotImplementedError("Operator \"" + self.op + "\" is not implemented for Expression Type " +
@@ -389,6 +413,8 @@ class BinaryOperator(Node):
                             " Does Not Match the Right Expression Type " +
                             str(self.right.getValue().type()))
 
+        self.restoreSelfValues(leftIdentifierCache, rightIdentifierCache)
+        return result
 
 class AssignmentExpression(Node):
     def __init__(self, left_expr, right_expr):
@@ -397,6 +423,7 @@ class AssignmentExpression(Node):
 
     def interpret(self, ctx):
         # check if LHS is an identifier, raise error if it is not
+        cachedExpr = self.expr
         self.identifier = self.identifier.interpret(ctx)
         self.expr = self.expr.interpret(ctx)
 
@@ -405,11 +432,25 @@ class AssignmentExpression(Node):
         if (self.identifier.type() != Identifier):
             raise AssignmentError(
                 "LHS of assignment statement must be an identifier")
+
         if (self.expr.type() == Identifier):
             self.expr = ctx.lookup(self.expr)
 
+        # general case
         # append the value of the expression to the lhs identifier
+
         ctx.add(self.identifier, self.expr)
+
+        result = self.expr
+        self.expr = cachedExpr
+        return result
+
+        # else:
+        #     raise NotImplementedError("Assignment Expression is not implemented for Expression Type " +
+        #                                   str(self.identifier.type()) +
+        #                                   " and Expression Type " +
+        #                                   str(self.expr.type()))
+
 
 
 class IfExpression(Node):
@@ -586,6 +627,9 @@ class ForStatement(Node):
         self.body = body
 
     def interpret(self, ctx):
+        # make the deep copy and a shallow of the context since we are entering a different scope
+        ctx = ctx.copy(ctx)
+
         # interpretion cycle
         # check condition (if true) -> execute for statement body -> execute post statement
         # check condition (if false) -> terminate
@@ -594,11 +638,28 @@ class ForStatement(Node):
             raise ConditionError(
                 "Conditional statement of while statement must be type Boolean.")
 
+        # typically assignment statement
         self.preStatement.interpret(ctx)
 
-        if (self.condition.interpret(ctx).isTrue()):
-            # execute the body block
-            self.body.interpret(ctx)
+        # conditionFlag is set to true to start with.
+        conditionFlag = True 
+        uninterpretedBodyCache = self.body
+        uninterpretedPostStatementCache = self.postStatement
+
+        #while (conditionFlag and a != 0):
+        while(True):
+            # check the condition and assign the resulted value to conditionFlag
+            conditionFlag = self.condition.interpret(ctx).isTrue()
+            if (conditionFlag):
+              # execute the body block if condition is evaluted to true
+              uninterpretedBodyCache.interpret(ctx)
+              uninterpretedPostStatementCache.interpret(ctx)
+
+              # reset Cache
+              uninterpretedBodyCache = self.body
+              uninterpretedPostStatementCache = self.postStatement
+            else:
+              break;
 
 
 class PrintStatement(Node):

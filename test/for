@@ -1,0 +1,6 @@
+a = 2;
+for (a = 2; a <= 4; a = (a + 1);) {
+  println "hello";
+}
+
+print a;

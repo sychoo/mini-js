@@ -22,7 +22,7 @@ class Parser:
                 ('left', ['LPAREN', 'RPAREN']),
                 ('left', ['PLUS', 'MINUS']),
                 ('left', ['MUL', 'DIV']),
-                ('left', ['EQUAL'])
+                ('right', ['EQUAL']),
             ])
 
         # parser definition
@@ -55,15 +55,18 @@ class Parser:
             return ast.PrintStatement(s[0].getstr(), s[1])
 
         # while statement
+        # can end with semicolon or not
         @pg.production("statement : WHILE LPAREN expr RPAREN LBRACE statements RBRACE SEMICOLON")
         @pg.production("statement : WHILE LPAREN expr RPAREN LBRACE statements RBRACE")
         def statement_while(s):
           return ast.WhileStatement(s[2], s[5])
 
         # for statement
-        @pg.production("statement : FOR LPAREN statement expr statement LBRACE statements RBRACE")
+        # can end with semicolon or not
+        @pg.production("statement : FOR LPAREN statement expr SEMICOLON statement RPAREN LBRACE statements RBRACE SEMICOLON")
+        @pg.production("statement : FOR LPAREN statement expr SEMICOLON statement RPAREN LBRACE statements RBRACE")
         def statement_for(s):
-          return ast.ForStatement(s[2], s[3], s[4], s[6])
+          return ast.ForStatement(s[2], s[3], s[5], s[8])
 
 
         # parenthese support for expressions

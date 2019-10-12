@@ -1,0 +1,6 @@
+a = 2;
+// a = a + 1; // error occurs because the program is parses a = a first and treat + 1 as a unary opeartion
+a = (a + 1); // this is legal because the parser treat the "(a + 1)" as an object
+
+
+print 1 + a;
