@@ -9,34 +9,37 @@ class Lexer:
     def __init__(self):
         lg = LexerGenerator()
         # ignore begin and ending white spaces
-        #lg.ignore(r"\s+") # original
-        #lg.ignore(r"[^\S\n\r\f]+") # this is the regex that just matches a space (emtpy string)
-        #lg.ignore(r"[^\S\n]+") # matches just a space
+        # lg.ignore(r"\s+") # original
+        # lg.ignore(r"[^\S\n\r\f]+") # this is the regex that just matches a space (emtpy string)
+        # lg.ignore(r"[^\S\n]+") # matches just a space
 
         # support get rid of white space, single-line comments and multiline comments
         # since some of the characters are defined in the lexer, I have to ignore them in order to achieve multi-line comments
         lg.ignore(r"(\s+)|(\/\/.*\n)|(\/\*(.*)|(\s*)\*\/)")
-        lg.add("NEWLINE", r"\n") # no longer needed. Newline character is not allowed in mini-js
+        # no longer needed. Newline character is not allowed in mini-js
+        lg.add("NEWLINE", r"\n")
 
         # this is solely for debug purpose.
         # white space will not be allowed in the actual interpretation of the program
         lg.add("WHITESPACE", r"\s")
 
-        lg.add("BOOLEANOR", r"\|\|")
-        lg.add("BOOLEANAND", r"\&\&")
-        
+        lg.add("BOOLEAN_OR", r"\|\|")
+        lg.add("BOOLEAN_AND", r"\&\&")
+
+        lg.add("GREATER_EQUAL", r"\>\=")
+        lg.add("LESS_EQUAL", r"\<\=")
         lg.add("GREATER", r"\>")
         lg.add("LESS", r"\<")
         lg.add("EQUAL_EQUAL", r"\=\=")
         lg.add("NOT_EQUAL", r"\!\=")
-        lg.add("GREATER_EQUAL", r"\>\=")
-        lg.add("LESS_EQUAL", r"\<\=")
-        
+
+        lg.add("WHILE", r"while")
+        lg.add("FOR", r"for")
         lg.add("IF", r"if")
         lg.add("ELSE", r"else")
         lg.add("PRINTLN", r"println")
         lg.add("PRINT", r"print")
-       
+
         lg.add("LPAREN", r"\(")
         lg.add("RPAREN", r"\)")
         lg.add("LBRACE", r"\{")
@@ -47,9 +50,6 @@ class Lexer:
         lg.add("MINUS", r"-")
         lg.add("MULTIPLY", r"\*")
         lg.add("DIVIDE", r"/")
-
-        lg.add("GREATER_EQUAL", r">=")
-        lg.add("LESS_EQUAL", r"<=")
 
         lg.add("SEMICOLON", r";")
         lg.add("NUMBER", r"\d+")

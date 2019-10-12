@@ -13,11 +13,13 @@ class Parser:
             ["NUMBER", "PLUS", "MINUS", "MULTIPLY", "DIVIDE", "SEMICOLON",
              "PRINT", "PRINTLN", "STRING", "EQUAL", "IDENTIFIER", "BOOLEAN",
              "LBRACE", "RBRACE", "LPAREN", "RPAREN", "IF", "ELSE", "BOOLEAN_AND",
-             "BOOLEAN_OR"
+             "BOOLEAN_OR", "EQUAL_EQUAL", "NOT_EQUAL", "GREATER", "LESS", "GREATER_EQUAL",
+             "LESS_EQUAL", "WHILE", "FOR"
              ],
             # A list of precedence rules with ascending precedence, to
             # disambiguate ambiguous production rules.
             precedence=[
+                ('left', ['LPAREN', 'RPAREN']),
                 ('left', ['PLUS', 'MINUS']),
                 ('left', ['MUL', 'DIV']),
                 ('left', ['EQUAL'])
@@ -52,19 +54,49 @@ class Parser:
         def statement_print(s):
             return ast.PrintStatement(s[0].getstr(), s[1])
 
+        # while statement
+        @pg.production("statement : WHILE LPAREN expr RPAREN LBRACE statements RBRACE SEMICOLON")
+        @pg.production("statement : WHILE LPAREN expr RPAREN LBRACE statements RBRACE")
+        def statement_while(s):
+          return ast.WhileStatement(s[2], s[5])
+
+        # for statement
+        @pg.production("statement : FOR LPAREN statement expr statement LBRACE statements RBRACE")
+        def statement_for(s):
+          return ast.ForStatement(s[2], s[3], s[4], s[6])
+
+
+        # parenthese support for expressions
+        # not working
+        @pg.production("val : LPAREN expr RPAREN")
+        def expr_parens(s):
+          return ast.ParentheseValue(s[1])
+
         # assignment expression
         @pg.production("expr : expr EQUAL expr")
         def expr_assignment(s):
             return ast.AssignmentExpression(s[0], s[2])
 
         # binary operator expressions
+        # algebratic operations -> return number
         @pg.production("expr : expr PLUS expr")
         @pg.production("expr : expr MINUS expr")
         @pg.production("expr : expr MULTIPLY expr")
         @pg.production("expr : expr DIVIDE expr")
+
+        # boolean operations -> return boolean
         @pg.production("expr : expr BOOLEAN_OR expr")
         @pg.production("expr : expr BOOLEAN_AND expr")
-        @pg.production("expr : ")
+
+        # number operations -> return boolean
+        @pg.production("expr : expr GREATER_EQUAL expr")
+        @pg.production("expr : expr LESS_EQUAL expr")
+        @pg.production("expr : expr GREATER expr")
+        @pg.production("expr : expr LESS expr")
+
+        # for both number and booleans -> return boolean
+        @pg.production("expr : expr EQUAL_EQUAL expr")
+        @pg.production("expr : expr NOT_EQUAL expr")
         def expr_binop(s):
             return ast.BinaryOperator(s[1].getstr(), s[0], s[2])
 

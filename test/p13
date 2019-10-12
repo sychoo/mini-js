@@ -1,0 +1,6 @@
+a = 3;
+print if (a <= 2) {
+         "a is big!"
+      } else {
+         a
+      };

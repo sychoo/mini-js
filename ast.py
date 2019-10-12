@@ -5,10 +5,13 @@
 # main difference between expression and statements: interpret() function for
 # expressions returns, interpret() function for statement do not have to return.
 import sys
+import copy
+
+
+class NotImplementedError(Exception):
+    pass
 
 # assignment error
-
-
 class AssignmentError(Exception):
     pass
 
@@ -17,7 +20,7 @@ class AssignmentError(Exception):
 class ContextError(Exception):
     pass
 
-
+# when operations are refering to a null pointer
 class NullPointerException(Exception):
     pass
 
@@ -30,27 +33,52 @@ class TypeError(Exception):
     pass
 
 
+# note that context uses the value of the identifier as the "key" to index the
+# dictionary
 class Context(object):
-    def __init__(self):
-        self.context = {}
+    def __init__(self, context={}, outerContext={}):
+        # by default, context will be initialized as an empty dictionary
+        self.context = context
+
+        # upperLevelContext stores the shallow copy of the context of the outer scope
+        # handles the case where an identifier is declared outside the scope and
+        # being modified within the scope
+        self.outerContext = outerContext
 
     def add(self, identifier, value):
+        # update the current context
         self.context.update({identifier.getValue(): value})
+
+        # if identifier (key) is defined in the outer context, also
+        # update the binding for the outer context
+        if (identifier.getValue() in self.getOuterContextIdentifierValues()):
+            self.outerContext.update({identifier.getValue(): value})
 
     def lookup(self, identifier):
         try:
             return self.context[identifier.getValue()]
         except KeyError:
             raise ContextError(
-                "Identifier specified is not in the scope of the context!")
+                "Identifier \"" + identifier.getValue() + "\" specified is not in the scope of the context!")
 
     def getEmptyContext(self):
-        self.context = {}
-        return self
+        return Context()
 
-    def getContext(self):
+    def getContextDictionary(self):
         return self.context
 
+    def copy(self, other):
+        # make the deep copy and a shallow of the context.
+        return Context(copy.deepcopy(other.getContextDictionary()), other.getContextDictionary())
+
+    def __repr__(self):
+        return str(self.context)
+
+    def getContextIdentifierValues(self):
+      return self.context.keys()
+
+    def getOuterContextIdentifierValues(self):
+      return self.outerContext.keys()
 
 class Node(object):
         # equal operator overload
@@ -93,6 +121,9 @@ class Expr(Node):
     def __init__(self, value):
         self.value = value
 
+    def getValue(self):
+        return self.value
+
     def interpret(self, ctx):
         return self.value.interpret(ctx)
 
@@ -108,11 +139,29 @@ class Number(Node):
     def minus(self, other):
         return Number(self.getValue() - other.getValue())
 
-    def multiply():
+    def multiply(self, other):
         return Number(self.getValue() * other.getValue())
 
-    def divide():
+    def divide(self, other):
         return Number(self.getValue() / other.getValue())
+
+    def greater_than_or_equal_to(self, other):
+        return Boolean(self.getValue() >= other.getValue())
+
+    def less_than_or_equal_to(self, other):
+        return Boolean(self.getValue() <= other.getValue())
+
+    def greater_than(self, other):
+        return Boolean(self.getValue() > other.getValue())
+
+    def less_than(self, other):
+        return Boolean(self.getValue() < other.getValue())
+
+    def equal_to(self, other):
+        return Boolean(self.getValue() == other.getValue())
+
+    def equal_to(self, other):
+        return Boolean(self.getValue() != other.getValue())
 
     def getValue(self):
         return self.value
@@ -143,10 +192,22 @@ class String(Node):
 class Boolean(Node):
     def __init__(self, value):
         # the value of Boolean will just be python boolean
-        if (value == "true"):
+        if (value == "true" or value == True):
             self.value = True
-        if (value == "false"):
+        if (value == "false" or value == False):
             self.value = False
+
+    def boolean_or(self, other):
+        return Boolean(self.value or other.value)
+
+    def boolean_and(self, other):
+        return Boolean(self.value and other.value)
+
+    def equal_to(self, other):
+        return Boolean(self.value == other.value)
+
+    def not_equal_to(self, other):
+        return Boolean(self.value != other.value)
 
     def getValue(self):
         return self.value
@@ -157,7 +218,7 @@ class Boolean(Node):
         elif (self.isFalse()):
             return "false"
         else:
-            return TypeError("Boolean value must be either true or false!")
+            raise TypeError("Boolean value must be either true or false!")
 
     def isTrue(self):
         return self.value == True
@@ -214,6 +275,11 @@ class UnaryOperator(Node):
     def interpret(self, ctx):
         return NotImplemented
 
+class ParentheseValue(Node):
+  def __init__(self, value):
+    self.value = value
+  def interpret(self, ctx):
+    return self.value.interpret(ctx)
 
 # binary operator
 class BinaryOperator(Node):
@@ -222,17 +288,106 @@ class BinaryOperator(Node):
         self.left = left
         self.right = right
 
+    def getLeftType(self):
+      return self.left.getValue().type()
+    
+    def getRightType(self):
+      return self.right.getValue().type()
+
     def interpret(self, ctx):
-        if self.op == "+":
-            return self.left.interpret(ctx).add(self.right.interpret(ctx))
-        if self.op == "-":
-            return self.left.interpret(ctx).minus(self.right.interpret(ctx))
-        if self.op == "*":
-            return self.left.interpret(ctx).multiply(self.right.interpret(ctx))
-        if self.op == "/":
-            return self.left.interpret(ctx).divide(self.right.interpret(ctx))
+        # Over all (Expr, Expr) -> (Expr))
+        # Expr is the super type of Numbers, Strings and Booleans
+        # (Number, Number) -> Number/Boolean
+        # type check
+
+        # (Identifier, Boolean) -> Boolean
+        # Make sure to do context lookup
+
+        # temporarily suspended type check as a hack for the parent expression
+        # to-do add parentedExpr class to the AST and treat it different than other Exprs
+        # in the parser wrap it with Expr class for getValue()
+
+        if (self.left.getValue().type() == Identifier):
+            # look up the value of the identifier, assign to the left hand side
+            # wrap it with expression class so that getValue works for the expression
+            self.left = Expr(ctx.lookup(self.left.interpret(ctx)))
+
+        
+        if (self.getLeftType() == self.getRightType() == Number or self.getLeftType() == ParentheseValue or self.getRightType() == ParentheseValue):
+            # (Number, Number) -> Number
+            if self.op == "+":
+                return self.left.interpret(ctx).add(self.right.interpret(ctx))
+            if self.op == "-":
+                return self.left.interpret(ctx).minus(self.right.interpret(ctx))
+            if self.op == "*":
+                return self.left.interpret(ctx).multiply(self.right.interpret(ctx))
+            if self.op == "/":
+                return self.left.interpret(ctx).divide(self.right.interpret(ctx))
+
+            # (Number, Number) -> Boolean
+            if self.op == ">=":
+                return self.left.interpret(ctx).greater_than_or_equal_to(self.right.interpret(ctx))
+            if self.op == "<=":
+                return self.left.interpret(ctx).less_than_or_equal_to(self.right.interpret(ctx))
+            if self.op == ">":
+                return self.left.interpret(ctx).greater_than(self.right.interpret(ctx))
+            if self.op == "<":
+                return self.left.interpret(ctx).less_than(self.right.interpret(ctx))
+
+            # duplicate function (Number/Boolean, Number/Boolean) -> Boolean
+            # note that interpreter must make sure the consistency of type between the two sides of the operator
+            if self.op == "==":
+                return self.left.interpret(ctx).equal_to(self.right.interpret(ctx))
+            if self.op == "!=":
+                return self.left.interpret(ctx).not_equal_to(self.right.interpret(ctx))
+
+            else:
+                raise NotImplementedError("Operator \"" + self.op + "\" is not implemented for Expression Type " +
+                                          str(self.left.getValue().type()) +
+                                          " and Expression Type " +
+                                          str(self.right.getValue().type()))
+
+        # (Boolean, Boolean) -> Number/Boolean
+        if (self.getLeftType() == self.getRightType() == Boolean or self.getLeftType() == ParentheseValue or self.getRightType() == ParentheseValue):
+            # (Boolean, Boolean) -> Boolean
+            if self.op == "||":
+                # short circuit evaluation
+                # evaluate left side first
+                self.left = self.left.interpret(ctx)
+                if (self.left.isTrue()):
+                    return Boolean(True)
+                # otherwise, return the fully evaluated clause
+                # since self.left has already been evaluated, no need to call interpret again
+                return self.left.boolean_or(self.right.interpret(ctx))
+
+            if self.op == "&&":
+                # supports short circuit evaluation
+                # evalute left side first
+                self.left = self.left.interpret(ctx)
+                if (self.left.isFalse()):
+                    return Boolean(False)
+                # otherwise, return the fully evaluated clause
+                # since self.left has already been evaluated, no need to call interpret again
+                return self.left.boolean_and(self.right.interpret(ctx))
+
+            # duplicate function (Number/Boolean, Number/Boolean) -> Boolean
+            # note that interpreter must make sure the consistency of type between the two sides of the operator
+            if self.op == "==":
+                return self.left.interpret(ctx).equal_to(self.right.interpret(ctx))
+            if self.op == "!=":
+                return self.left.interpret(ctx).not_equal_to(self.right.interpret(ctx))
+
+            else:
+                raise NotImplementedError("Operator \"" + self.op + "\" is not implemented for Expression Type " +
+                                          str(self.left.getValue().type()) +
+                                          " and Expression Type " +
+                                          str(self.right.getValue().type()))
+
         else:
-            return NotImplemented
+            raise TypeError("Left Expression Type " +
+                            str(self.left.getValue().type()) +
+                            " Does Not Match the Right Expression Type " +
+                            str(self.right.getValue().type()))
 
 
 class AssignmentExpression(Node):
@@ -245,6 +400,8 @@ class AssignmentExpression(Node):
         self.identifier = self.identifier.interpret(ctx)
         self.expr = self.expr.interpret(ctx)
 
+        # type check
+        # left hand side has to be an identifier
         if (self.identifier.type() != Identifier):
             raise AssignmentError(
                 "LHS of assignment statement must be an identifier")
@@ -264,6 +421,9 @@ class IfExpression(Node):
         self.if_body = if_body
 
     def interpret(self, ctx):
+        # make the deep copy and a shallow of the context since we are entering a different scope
+        ctx = ctx.copy(ctx)
+
         # interpret condition and if_body
         self.condition = self.condition.interpret(ctx)
 
@@ -297,6 +457,9 @@ class IfElseIfElseExpression(Node):
         self.else_body = else_body
 
     def interpret(self, ctx):
+        # make the deep copy and a shallow copy of the context since we are entering a different scope
+        ctx = ctx.copy(ctx)
+
         # interpret condition and if_body
         self.condition = self.condition.interpret(ctx)
 
@@ -367,7 +530,7 @@ class ElseIfBody(Node):
         return self.condition.interpret(ctx)
 
     def interpretBody(self, ctx):
-                # case when if body consists of expressions
+        # case when if body consists of expressions
         if (self.else_if_body.type() == Expr):
             return self.else_if_body.interpret(ctx)
 
@@ -396,6 +559,46 @@ class ElseBody(Node):
         if (self.else_body.type() == Block):
             self.else_body.interpret(ctx)
             return Null()
+
+
+class WhileStatement(Node):
+    def __init__(self, condition, body):
+        self.condition = condition
+        self.body = body
+
+    def interpret(self, ctx):
+        # make the deep copy and a shallow of the context since we are entering a different scope
+        ctx = ctx.copy(ctx)
+
+        # type check whether the condition is of Boolean type
+        if (self.condition.interpret(ctx).type() != Boolean):
+            raise ConditionError(
+                "Conditional statement of while statement must be type Boolean.")
+        while (self.condition.interpret(ctx).isTrue()):
+            self.body.interpret(ctx)
+
+
+class ForStatement(Node):
+    def __init__(self, preStatement, condition, postStatement, body):
+        self.preStatement = preStatement
+        self.condition = condition
+        self.postStatement = postStatement
+        self.body = body
+
+    def interpret(self, ctx):
+        # interpretion cycle
+        # check condition (if true) -> execute for statement body -> execute post statement
+        # check condition (if false) -> terminate
+        # type check the condition is of Boolean type
+        if (self.condition.interpret(ctx).type() != Boolean):
+            raise ConditionError(
+                "Conditional statement of while statement must be type Boolean.")
+
+        self.preStatement.interpret(ctx)
+
+        if (self.condition.interpret(ctx).isTrue()):
+            # execute the body block
+            self.body.interpret(ctx)
 
 
 class PrintStatement(Node):

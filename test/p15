@@ -1,0 +1,11 @@
+// scope
+a = 1;
+if (1 < 2) {
+  println a;
+  a = 1;
+  a = 2;
+  println a;
+} else {
+  print "hi";
+};
+println a;

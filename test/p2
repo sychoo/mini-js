@@ -1,6 +1,8 @@
+// error!
 a = 3;
 if (a >= 2) {
 	print "a is big!";
 } else {
-	print a;
-}
+	print 1;
+};
+print a;

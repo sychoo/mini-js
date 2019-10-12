@@ -1,0 +1,8 @@
+// scope error
+if (1 < 2) {
+  a = 2;
+  println a;
+} else {
+  print "hi";
+};
+println a;
