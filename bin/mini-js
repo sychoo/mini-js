@@ -1,0 +1,5 @@
+#!/bin/bash
+python3 $MINIJS/src/interp.py $*
+
+# make sure to execute INSTALL.sh before executing this command
+
