@@ -39,8 +39,8 @@ Installation
     ```
   - If you obtained the result above, you have successfully installed mini-js. If you are not getting the expected result above, or you are using a shell that is not bash, please put the following two lines in your corresponding shell prelude files (such as .zshrc for zsh users, .cshrc for csh users)
     ```bash
-    export PATH="/Users/sychoo/code/mini-js/bin:$PATH"
-    export MINIJS="/Users/sychoo/code/mini-js"
+    export PATH="<mini JS installation directory>/bin:$PATH"
+    export MINIJS="<mini JS installation path>/mini-js"
     ```
   - If you would like to run the interpreter manual (usually for debug purposes), within the /src directory in the program repository, execute the following command.
     ```shell
